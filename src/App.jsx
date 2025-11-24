@@ -10,7 +10,7 @@ const LevelBadge = ({ level }) => {
     4: "bg-red-100 text-red-800 border-red-200 print:border-red-600 print:text-red-900"
   };
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${colors[level] || colors[1]} print:bg-transparent print:border`}>
+    <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${colors[level] || colors[1]} print:bg-transparent print:border print:px-1 print:py-0`}>
       第 {level} 級
     </span>
   );
@@ -61,15 +61,11 @@ const InputField = ({ label, name, value, onChange, unit, placeholder, type = "n
 // --- UI 元件：安澤 Logo (圖片版) ---
 const AnzeLogo = () => (
   <div className="flex items-center select-none print:break-inside-avoid">
-    {/* 這裡直接讀取 public 資料夾中的 logo.png 
-      h-14 代表高度約 56px，適合 A4 報告顯示，w-auto 會自動維持比例
-    */}
     <img 
       src="/logo.png" 
       alt="安澤健康顧問 Logo" 
-      className="h-14 w-auto object-contain"
+      className="h-14 w-auto object-contain print:h-10"
       onError={(e) => {
-        // 如果找不到圖片，顯示備用文字，避免畫面空白
         e.target.style.display = 'none';
         e.target.parentNode.innerHTML = '<span style="color:red;font-weight:bold;">請確認 public 資料夾內是否有 logo.png</span>';
       }}
@@ -289,35 +285,65 @@ const App = () => {
         </div>
 
         {/* --- REPORT SECTION --- */}
-        <div className={`${viewMode === 'report' ? 'block' : 'hidden'} print:block bg-white shadow-lg mx-auto print:shadow-none print:m-0 w-full md:w-[210mm] min-h-[297mm] p-[10mm] print:p-0 text-sm`}>
-            <div className="flex items-center justify-between border-b-2 border-gray-800 pb-4 mb-4">
-                <AnzeLogo />
-                <div className="text-right"><div className="text-gray-500 text-xs">報告產出日期</div><div className="text-lg font-bold font-mono">{new Date().toLocaleDateString()}</div></div>
-            </div>
+        <div className={`${viewMode === 'report' ? 'block' : 'hidden'} print:block bg-white shadow-lg mx-auto print:shadow-none print:m-0 w-full md:w-[210mm] min-h-0 print:text-xs`}>
+            <div className="p-[10mm] print:p-0">
+                <div className="flex items-center justify-between border-b-2 border-gray-800 pb-2 mb-2">
+                    <AnzeLogo />
+                    <div className="text-right"><div className="text-gray-500 text-[10px]">報告產出日期</div><div className="text-sm font-bold font-mono">{new Date().toLocaleDateString()}</div></div>
+                </div>
 
-            <div className="mb-6"><h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-2 uppercase">受檢者基本資料</h3>
-                <div className="grid grid-cols-3 border border-gray-300 rounded bg-gray-50"><div className="p-3 border-r"><span className="text-xs text-gray-500 block">姓名</span><span className="font-bold text-lg">{personalInfo.examineeName || "---"}</span></div><div className="p-3 border-r"><span className="text-xs text-gray-500 block">性別</span><span className="font-bold text-lg">{gender === 'male' ? '男' : '女'}</span></div><div className="p-3"><span className="text-xs text-gray-500 block">年齡</span><span className="font-bold text-lg">{personalInfo.examineeAge || "---"} 歲</span></div></div>
-            </div>
+                <div className="mb-4 print:mb-2">
+                    <h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-1 uppercase">受檢者基本資料</h3>
+                    <div className="grid grid-cols-3 border border-gray-300 rounded bg-gray-50 print:bg-transparent">
+                        <div className="p-2 border-r border-gray-300"><span className="text-[10px] text-gray-500 block">姓名</span><span className="font-bold text-sm">{personalInfo.examineeName || "---"}</span></div>
+                        <div className="p-2 border-r border-gray-300"><span className="text-[10px] text-gray-500 block">性別</span><span className="font-bold text-sm">{gender === 'male' ? '男' : '女'}</span></div>
+                        <div className="p-2"><span className="text-[10px] text-gray-500 block">年齡</span><span className="font-bold text-sm">{personalInfo.examineeAge || "---"} 歲</span></div>
+                    </div>
+                </div>
 
-            <div className="mb-6"><h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-2 uppercase">法規項目檢核結果</h3>
-                {failedChecklistItems.length === 0 ? <div className="bg-green-50 border border-green-200 text-green-800 p-3 rounded flex items-center gap-2"><CheckCircle2 className="w-5 h-5" /><span className="font-bold">檢核合格：所有法定應檢查項目皆已齊全。</span></div> : <div className="border border-red-200 rounded"><div className="bg-red-50 p-2 border-b border-red-200 flex items-center gap-2 text-red-800"><XCircle className="w-5 h-5" /><span className="font-bold">檢核不合格：發現缺漏項目，請補件。</span></div><table className="w-full text-xs text-left"><thead className="bg-gray-100"><tr><th className="p-2">類別</th><th className="p-2">缺漏項目</th><th className="p-2">建議</th></tr></thead><tbody>{failedChecklistItems.map((item, i) => (<tr key={i} className="border-t"><td className="p-2">{item.category}</td><td className="p-2 font-bold text-red-600">{item.label}</td><td className="p-2">建議改善/補件</td></tr>))}</tbody></table></div>}
-            </div>
+                <div className="mb-4 print:mb-2">
+                    <h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-1 uppercase">法規項目檢核結果</h3>
+                    {failedChecklistItems.length === 0 ? 
+                        <div className="bg-green-50 border border-green-200 text-green-800 p-2 rounded flex items-center gap-2 print:bg-transparent print:border-green-400"><CheckCircle2 className="w-4 h-4" /><span className="font-bold text-xs">檢核合格：所有法定應檢查項目皆已齊全。</span></div> : 
+                        <div className="border border-red-200 rounded"><div className="bg-red-50 p-1 border-b border-red-200 flex items-center gap-2 text-red-800 print:bg-transparent"><XCircle className="w-4 h-4" /><span className="font-bold text-xs">檢核不合格：發現缺漏項目，請補件。</span></div><table className="w-full text-[10px] text-left"><thead className="bg-gray-100 print:bg-transparent"><tr><th className="p-1">類別</th><th className="p-1">缺漏項目</th><th className="p-1">建議</th></tr></thead><tbody>{failedChecklistItems.map((item, i) => (<tr key={i} className="border-t border-gray-200"><td className="p-1">{item.category}</td><td className="p-1 font-bold text-red-600">{item.label}</td><td className="p-1">建議改善/補件</td></tr>))}</tbody></table></div>
+                    }
+                </div>
 
-            <div className="mb-6"><h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-2 uppercase">健康分級判定</h3>
-                <div className={`p-4 rounded-lg border-2 flex items-center justify-between ${calculateResults.maxLevel === 1 ? 'bg-green-50 border-green-500 text-green-900' : calculateResults.maxLevel === 4 ? 'bg-red-50 border-red-500 text-red-900' : 'bg-yellow-50 border-yellow-500 text-yellow-900'}`}>
-                    <div><div className="text-xs font-bold opacity-70 mb-1">總體分級結果</div><div className="text-2xl font-bold">第 {calculateResults.maxLevel} 級 {calculateResults.maxLevel === 1 ? "(正常)" : "(異常)"}</div><div className="text-sm mt-1 font-medium">{calculateResults.maxLevel === 1 ? "自主健康管理" : calculateResults.maxLevel === 4 ? "藥物治療 + 個案管理" : "衛生指導 / 就醫診治"}</div></div><div className="text-4xl font-bold opacity-20">{calculateResults.maxLevel}</div>
+                <div className="mb-4 print:mb-2">
+                    <h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-1 uppercase">健康分級判定</h3>
+                    <div className={`p-2 rounded-lg border-2 flex items-center justify-between ${calculateResults.maxLevel === 1 ? 'bg-green-50 border-green-500 text-green-900' : calculateResults.maxLevel === 4 ? 'bg-red-50 border-red-500 text-red-900' : 'bg-yellow-50 border-yellow-500 text-yellow-900'} print:bg-transparent`}>
+                        <div><div className="text-[10px] font-bold opacity-70">總體分級結果</div><div className="text-xl font-bold">第 {calculateResults.maxLevel} 級 {calculateResults.maxLevel === 1 ? "(正常)" : "(異常)"}</div><div className="text-xs mt-1 font-medium">{calculateResults.maxLevel === 1 ? "自主健康管理" : calculateResults.maxLevel === 4 ? "藥物治療 + 個案管理" : "衛生指導 / 就醫診治"}</div></div><div className="text-3xl font-bold opacity-20">{calculateResults.maxLevel}</div>
+                    </div>
+                </div>
+
+                <div className="mb-4 print:mb-2">
+                    <h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-1 uppercase">各項檢查結果明細</h3>
+                    {calculateResults.results.length === 0 ? <div className="text-gray-400 text-center py-4 border rounded">尚未輸入數據</div> : 
+                    <table className="w-full text-[10px] border-collapse border border-gray-300">
+                        <thead className="bg-slate-100 print:bg-gray-100"><tr><th className="border border-gray-300 p-1 text-left w-1/4">檢查項目</th><th className="border border-gray-300 p-1 text-right w-1/4">檢測值</th><th className="border border-gray-300 p-1 text-center w-1/4">參考標準</th><th className="border border-gray-300 p-1 text-center w-1/4">分級</th></tr></thead>
+                        <tbody>{calculateResults.results.map((item, i) => (<tr key={i} className={item.level > 1 ? "bg-red-50 print:bg-gray-50" : ""}><td className="border border-gray-300 p-1 font-medium">{item.item}</td><td className="border border-gray-300 p-1 text-right font-mono font-bold">{item.value} <span className="text-[8px] text-gray-500">{item.unit}</span></td><td className="border border-gray-300 p-1 text-center text-[9px] text-gray-500">{item.refRange}</td><td className="border border-gray-300 p-1 text-center"><LevelBadge level={item.level} /></td></tr>))}</tbody>
+                    </table>}
+                </div>
+
+                {calculateResults.results.filter(r => r.level > 1).length > 0 && (
+                    <div className="mb-4 print:mb-2 break-inside-avoid">
+                        <h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-1 uppercase">異常項目管理建議</h3>
+                        <div className="border border-gray-300 rounded bg-white print:bg-transparent">
+                            {calculateResults.results.filter(r => r.level > 1).map((item, i) => (
+                                <div key={i} className="p-1 border-b border-gray-200 last:border-0 flex gap-2 items-start">
+                                    <div className="w-1/4 font-bold text-gray-800 text-[10px] pt-0.5">{item.item}</div>
+                                    <div className="flex-1 text-[10px] text-gray-600"><span className="text-red-600 font-bold mr-1">[異常]</span>{item.advice}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div className="mt-4 pt-2 border-t-2 border-gray-300 text-center text-[10px] text-gray-400">
+                    <p>本報告由 安澤顧問-新進人員體檢報告智能檢核系統 自動產出，僅供勞工健康管理參考，不取代醫師正式診斷。</p>
+                    <p>安澤管理顧問股份有限公司 | 你的勞工健康服務夥伴</p>
                 </div>
             </div>
-
-            <div className="mb-6"><h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-2 uppercase">各項檢查結果明細</h3>
-                {calculateResults.results.length === 0 ? <div className="text-gray-400 text-center py-4 border rounded">尚未輸入數據</div> : <table className="w-full text-sm border-collapse border border-gray-300"><thead className="bg-slate-100"><tr><th className="border p-2 text-left">檢查項目</th><th className="border p-2 text-right">檢測值</th><th className="border p-2 text-center">參考標準</th><th className="border p-2 text-center">分級</th></tr></thead><tbody>{calculateResults.results.map((item, i) => (<tr key={i} className={item.level > 1 ? "bg-red-50 print:bg-gray-50" : ""}><td className="border p-2 font-medium">{item.item}</td><td className="border p-2 text-right font-mono font-bold">{item.value} {item.unit}</td><td className="border p-2 text-center text-xs">{item.refRange}</td><td className="border p-2 text-center"><LevelBadge level={item.level} /></td></tr>))}</tbody></table>}
-            </div>
-
-            {calculateResults.results.filter(r => r.level > 1).length > 0 && (
-                <div className="mb-6 break-inside-avoid"><h3 className="text-sm font-bold text-gray-900 border-l-4 border-slate-600 pl-2 mb-2 uppercase">異常項目管理建議</h3><div className="border border-gray-300 rounded bg-white">{calculateResults.results.filter(r => r.level > 1).map((item, i) => (<div key={i} className="p-3 border-b last:border-0 flex gap-4 items-start"><div className="w-1/4 font-bold text-gray-800 text-xs pt-0.5">{item.item}</div><div className="flex-1 text-xs text-gray-600"><span className="text-red-600 font-bold mr-2">[異常]</span>{item.advice}</div></div>))}</div></div>
-            )}
-
-            <div className="mt-8 pt-4 border-t-2 border-gray-300 text-center text-xs text-gray-400"><p>本報告由 安澤顧問-新進人員體檢報告智能檢核系統 自動產出，僅供勞工健康管理參考，不取代醫師正式診斷。</p><p>安澤管理顧問股份有限公司 | 你的勞工健康服務夥伴</p></div>
         </div>
 
         {viewMode === 'report' && (
@@ -327,7 +353,18 @@ const App = () => {
             </div>
         )}
       </main>
-      <style>{`@media print { @page { size: A4; margin: 0; } body { background: white; -webkit-print-color-adjust: exact; } body > * { display: none; } body > div { display: block; } header { display: none !important; } }`}</style>
+      
+      <style>{`
+        @media print { 
+            @page { size: A4; margin: 10mm; } 
+            body { background: white; -webkit-print-color-adjust: exact; } 
+            body > * { display: none; } 
+            body > div { display: block; } 
+            header { display: none !important; }
+            /* 強制報告內容縮放以適應一頁 (如果內容真的太多，可視情況移除 transform) */
+            main { width: 100%; margin: 0; padding: 0; }
+        }
+      `}</style>
     </div>
   );
 };
