@@ -85,7 +85,7 @@ const INITIAL_CHECKLIST = {
 const INITIAL_HEALTH_DATA = {
     height: '', weight: '', waist: '', sbp: '', dbp: '', sugar_ac: '',
     cholesterol: '', ldl: '', hdl: '', tg: '', wbc: '', hb: '', plt: '',
-    alt: '', creatinine: '', uric_acid: '', urine_protein: 'normal', 
+    alt: '', creatinine: '', uric_acid: '', urine_protein: 'normal', urine_blood: 'normal',
     xray_result: 'normal', xray_other: ''
 };
 
@@ -139,11 +139,33 @@ const App = () => {
         if ((gender === 'male' && w >= 90) || (gender === 'female' && w >= 80)) l = 2;
         addResult("腰圍", w, l, gender === 'male' ? "<90" : "<80", l === 2 ? "腹部肥胖，建議運動飲食控制" : "正常", "cm");
     }
+    
+    // --- 血壓 (修正邏輯) ---
     if (healthData.sbp && healthData.dbp) {
-        const s = parseFloat(healthData.sbp), d = parseFloat(healthData.dbp);
+        const s = parseFloat(healthData.sbp);
+        const d = parseFloat(healthData.dbp);
         let l = 1;
-        if (s >= 160 || d >= 100) l = 4; else if (s >= 140 || d >= 90) l = 3; else if (s >= 120 || d >= 80) l = 2;
-        addResult("血壓", `${s}/${d}`, l, "SB<120, DB<80", advices[l], "mmHg");
+        let advice = advices[1];
+
+        // 判斷邏輯：取最嚴重的
+        if (s >= 180 || d >= 110) {
+            l = 4;
+            advice = "高血壓第三期：屬危險範圍，請立即就醫。";
+        } else if (s >= 160 || d >= 100) {
+            l = 4;
+            advice = "高血壓第二期：" + advices[4];
+        } else if (s >= 140 || d >= 90) {
+            l = 3;
+            advice = "高血壓第一期：" + advices[3];
+        } else if (s >= 120 || d >= 80) {
+            l = 2;
+            advice = "高血壓前期：" + advices[2];
+        } else {
+            l = 1;
+            advice = "正常血壓：" + advices[1];
+        }
+
+        addResult("血壓", `${s}/${d}`, l, "SB<120, DB<80", advice, "mmHg");
     }
     
     const simpleChecks = [
@@ -168,13 +190,28 @@ const App = () => {
         if ((gender === 'male' && v < 40) || (gender === 'female' && v < 50)) l = 2;
         addResult("高密度膽固醇(HDL)", v, l, gender === 'male' ? ">40" : ">50", l === 2 ? "數值偏低，建議運動" : "正常", "mg/dl");
     }
+
+    // --- WBC 白血球 ---
     if (healthData.wbc) {
         const v = parseFloat(healthData.wbc);
         let l = 1;
-        if (v >= 15100 || v <= 2100) l = 4; else if ((v >= 13000) || (v <= 3500)) l = 3; else if ((v >= 11000) || (v < 13000)) l = 2; 
-        if (v > 11000 && v < 13000) l = 2;
-        addResult("白血球 (WBC)", v, l, "4000-11000", advices[l], "/ul");
+        let advice = "自主健康管理";
+
+        if (v > 10800) {
+            l = 2; // 偏高
+            advice = "有感染發炎現象，嚴重如白血病，應追蹤檢查白血球數目。";
+            if (v > 13000) l = 3; // 依原分級表保留高風險
+            if (v > 15100) l = 4;
+        } else if (v < 4800) {
+            l = 2; // 偏低
+            advice = "抵抗力差，易罹患疾病（如登革熱、感冒），應注意作息狀況。";
+            if (v < 3500) l = 3;
+            if (v < 2100) l = 4;
+        }
+
+        addResult("白血球 (WBC)", v, l, "4800-10800", advice, "/ul");
     }
+
     if (healthData.hb) {
         const v = parseFloat(healthData.hb);
         let l = 1;
@@ -188,11 +225,29 @@ const App = () => {
         if (v > 2.0) l = 4; else if (v >= 1.4) l = 3; else if (v >= 1.3) l = 2;
         addResult("肌酸酐 (Cr)", v, l, gender === 'male' ? "0.7-1.2" : "0.5-0.9", advices[l], "mg/dl");
     }
-    if (healthData.urine_protein && healthData.urine_protein !== 'normal') {
+    
+    if (healthData.urine_protein) {
         let l = 1, v = healthData.urine_protein;
-        if (v === '4+') l = 4; else if (v === '2+' || v === '3+') l = 3; else if (v === '1+') l = 2;
-        addResult("尿蛋白", v, l, "-", advices[l]);
+        let displayVal = "陰性 (-)";
+        if (v === 'normal') displayVal = "陰性 (-)"; 
+        else if (v === '1+') { l = 2; displayVal = "1+"; }
+        else if (v === '2+') { l = 3; displayVal = "2+"; }
+        else if (v === '3+') { l = 3; displayVal = "3+"; }
+        else if (v === '4+') { l = 4; displayVal = "4+"; }
+        addResult("尿蛋白", displayVal, l, "-", advices[l]);
     }
+
+    if (healthData.urine_blood) {
+        let l = 1, v = healthData.urine_blood;
+        let displayVal = "陰性 (-)";
+        if (v === 'normal') displayVal = "陰性 (-)"; 
+        else if (v === '1+') { l = 2; displayVal = "1+"; }
+        else if (v === '2+') { l = 3; displayVal = "2+"; }
+        else if (v === '3+') { l = 3; displayVal = "3+"; }
+        else if (v === '4+') { l = 4; displayVal = "4+"; }
+        addResult("尿潛血", displayVal, l, "-", advices[l]);
+    }
+
     if (healthData.xray_result) {
         let l = 1, v = healthData.xray_result, txt = "正常 / 無明顯異常", adv = "自主健康管理";
         if (v === 'calcified') txt = "鈣化點";
@@ -276,8 +331,9 @@ const App = () => {
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">1. 基礎與代謝指標</h3><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><InputField label="身高" name="height" value={healthData.height} onChange={handleInputChange} unit="cm" /><InputField label="體重" name="weight" value={healthData.weight} onChange={handleInputChange} unit="kg" /><InputField label="腰圍" name="waist" value={healthData.waist} onChange={handleInputChange} unit="cm" /><InputField label="空腹血糖" name="sugar_ac" value={healthData.sugar_ac} onChange={handleInputChange} unit="mg/dl" /><InputField label="收縮壓" name="sbp" value={healthData.sbp} onChange={handleInputChange} unit="mmHg" /><InputField label="舒張壓" name="dbp" value={healthData.dbp} onChange={handleInputChange} unit="mmHg" /></div></div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">2. 血脂數據</h3><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><InputField label="總膽固醇" name="cholesterol" value={healthData.cholesterol} onChange={handleInputChange} unit="mg/dl" /><InputField label="LDL 低密度" name="ldl" value={healthData.ldl} onChange={handleInputChange} unit="mg/dl" /><InputField label="HDL 高密度" name="hdl" value={healthData.hdl} onChange={handleInputChange} unit="mg/dl" /><InputField label="三酸甘油酯" name="tg" value={healthData.tg} onChange={handleInputChange} unit="mg/dl" /></div></div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">3. 器官功能與血液</h3><div className="grid grid-cols-2 md:grid-cols-4 gap-4"><InputField label="ALT (GPT)" name="alt" value={healthData.alt} onChange={handleInputChange} unit="U/L" /><InputField label="肌酸酐 (Cr)" name="creatinine" value={healthData.creatinine} onChange={handleInputChange} unit="mg/dl" /><InputField label="尿酸" name="uric_acid" value={healthData.uric_acid} onChange={handleInputChange} unit="mg/dl" /><InputField label="白血球 (WBC)" name="wbc" value={healthData.wbc} onChange={handleInputChange} unit="/ul" /><InputField label="血色素 (Hb)" name="hb" value={healthData.hb} onChange={handleInputChange} unit="gm/dl" /><InputField label="血小板" name="plt" value={healthData.plt} onChange={handleInputChange} unit="萬" /></div></div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">4. 質性檢查結果</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">4. 質性檢查結果</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="flex flex-col"><label className="text-xs font-semibold text-gray-500 mb-1">尿蛋白</label><select name="urine_protein" value={healthData.urine_protein} onChange={handleInputChange} className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"><option value="normal">陰性 (-) 或 偽陽性 (+/-)</option><option value="1+">1+</option><option value="2+">2+</option><option value="3+">3+</option><option value="4+">4+</option></select></div>
+                    <div className="flex flex-col"><label className="text-xs font-semibold text-gray-500 mb-1">尿潛血</label><select name="urine_blood" value={healthData.urine_blood} onChange={handleInputChange} className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"><option value="normal">陰性 (-) 或 偽陽性 (+/-)</option><option value="1+">1+</option><option value="2+">2+</option><option value="3+">3+</option><option value="4+">4+</option></select></div>
                     <div className="flex flex-col"><label className="text-xs font-semibold text-gray-500 mb-1">胸部 X 光</label><select name="xray_result" value={healthData.xray_result} onChange={handleInputChange} className="p-2 border border-gray-300 rounded mb-2 focus:ring-2 focus:ring-blue-500"><option value="normal">正常 / 無明顯異常</option><option value="calcified">鈣化點</option><option value="scoliosis">脊椎側彎</option><option value="nodule_large">肺結節 &gt; 1CM</option><option value="tb_suspect">疑似肺浸潤/肺結核</option><option value="other">其他 (自行輸入)</option></select>{healthData.xray_result === 'other' && <InputField label="請輸入結果" name="xray_other" type="text" value={healthData.xray_other} onChange={handleInputChange} />}</div></div></div>
                 <div className="flex justify-center mt-8 mb-10"><button onClick={handleGenerateReport} className="bg-green-600 text-white px-10 py-4 rounded-xl shadow-lg flex items-center gap-3 text-lg font-bold hover:bg-green-700 transition-all transform hover:scale-105"><Calculator className="w-6 h-6" /> 點擊此處產出檢核報告</button></div>
             </div>
